@@ -4,3 +4,4 @@ __pycache__/
 data/*.index.pkl
 data/allganize_ja_pdfs/
 .streamlit/secrets.toml
+*.mp4
