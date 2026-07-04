@@ -1,0 +1,15 @@
+streamlit>=1.54  # st.dataframe(width="stretch") / st.code(wrap_lines) を使用
+anthropic>=0.40
+rank_bm25>=0.2.2
+scikit-learn>=1.5
+sentence-transformers>=3.0  # ベクトル検索 (intfloat/multilingual-e5-small)。CPUのみなら torch は https://download.pytorch.org/whl/cpu から入れると軽い。torchvision を併用する場合は torch と同じビルド (+cpu 同士) に揃えること (混在すると transformers の import が壊れる)
+pandas>=2.2
+pyarrow>=17
+duckdb>=1.1  # データセットのサブセット抽出にのみ使用
+requests>=2.32  # build_allganize_ja.py (PDFダウンロード) にのみ使用
+pypdf>=5.0  # build_allganize_ja.py (PDF本文抽出) にのみ使用
+cryptography>=43  # pypdf の暗号化PDF対応
+pypdfium2>=4.30  # build_allganize_ja.py (OCR用ページ画像レンダリング) にのみ使用
+rapidocr>=3.0  # build_allganize_ja.py (テキスト層が壊れたPDFのOCR) にのみ使用
+onnxruntime>=1.19  # rapidocr の推論バックエンド
+pillow>=10  # ページ画像の受け渡し
