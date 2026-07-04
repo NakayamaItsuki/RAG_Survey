@@ -5,7 +5,7 @@
 - EnterpriseRAG-Benchで社内ドキュメントの検索を再現
 - 日本語データセット Allganize RAG-Evaluation-Dataset-JA にも対応(デモアプリで切り替え可能)
 - Streamlitでデモアプリを作成.RAG手法を選択し,クエリを入力すると実際に検索&回答生成を行う.
-- LLMは claude-sonnet-5 を使用する.APIキーは .streamlt/secrets.toml に記載.
+- LLMは claude-sonnet-5 を使用する.APIキーは .streamlit/secrets.toml に記載.
 
 ---
 
@@ -25,15 +25,32 @@
 
 ## セットアップと実行
 
+必要なもの: Python 3.12 / [uv](https://docs.astral.sh/uv/) / [Anthropic APIキー](https://console.anthropic.com/)(回答生成に使用,従量課金)
+
 ```bash
+git clone https://github.com/NakayamaItsuki/RAG_Survey.git
+cd RAG_Survey
+
+# 1. 仮想環境と依存パッケージ
 uv venv .venv --python 3.12
+# GPUなし環境は先にCPU版torchを入れるとダウンロードが軽い (CUDA版は約2GB)
+uv pip install --python .venv/bin/python torch torchvision --index-url https://download.pytorch.org/whl/cpu
 uv pip install --python .venv/bin/python -r requirements.txt
+
+# 2. APIキーの設定 (このファイルはgit管理外)
+mkdir -p .streamlit
+echo 'ANTHROPIC_API_KEY = "sk-ant-..."' > .streamlit/secrets.toml
+
+# 3. 検索インデックスと文書埋め込みの事前構築 (推奨,CPUで計40〜60分)
+.venv/bin/python rag_core.py
+
+# 4. 起動
 .venv/bin/streamlit run app.py
 ```
 
-- APIキーは `.streamlt/secrets.toml` の `ANTHROPIC_API_KEY` を読む
-- 初回起動時のみ BM25 / TF-IDF インデックスを構築する(約90秒,以降は `data/*.index.pkl` にキャッシュされ数秒)
-- ベクトル検索用の文書埋め込みは初回のベクトル検索時に構築される(CPUでEN側は数十分かかるため,事前構築を推奨: `.venv/bin/python rag_core.py`。以降は `data/*.e5.npy` にキャッシュ)
+- 検索用のコーパス (parquet) はリポジトリに含まれるため,データセットの再構築は不要
+- 手順3を省略しても動くが,その場合は初回起動時に BM25 / TF-IDF インデックス構築(約90秒),初回のベクトル検索時に文書埋め込み構築(CPUでEN側は数十分)が走る。構築結果は `data/*.index.pkl` / `data/*.e5.npy` にキャッシュされ,2回目以降は数秒で起動する
+- キーワード検索系の手法だけならAPIキー以外の待ち時間はほぼない。ベクトル検索の初回はHuggingFaceから埋め込みモデル (約120MB) のダウンロードも走る
 
 ## デモアプリで選べるRAG手法
 
