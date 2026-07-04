@@ -2,6 +2,5 @@
 __pycache__/
 .claude/
 data/*.index.pkl
-data/*.e5.npy
 data/allganize_ja_pdfs/
 .streamlit/secrets.toml

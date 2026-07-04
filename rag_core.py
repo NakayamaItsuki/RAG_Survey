@@ -211,13 +211,19 @@ class Corpus:
         return self._to_results(idx, sims[idx])
 
     def _ensure_embeddings(self) -> np.ndarray:
-        """文書埋め込みを (無ければ計算して) 返す。.e5.npy にキャッシュする."""
+        """文書埋め込みを (無ければ計算して) 返す。.e5.npy にキャッシュする.
+
+        キャッシュの有効性は文書数の一致で判定する (mtime だと git clone 直後に
+        誤って再構築される)。parquet を作り直した場合は .e5.npy を削除すること。
+        """
         if self._doc_emb is not None:
             return self._doc_emb
         cache = self._parquet_path.with_suffix(".e5.npy")
-        if cache.exists() and cache.stat().st_mtime > self._parquet_path.stat().st_mtime:
-            self._doc_emb = np.load(cache)
-            return self._doc_emb
+        if cache.exists():
+            emb = np.load(cache)
+            if emb.shape[0] == len(self.df):
+                self._doc_emb = emb
+                return self._doc_emb
         # e5 系は文書側に "passage: " プレフィックスが必要
         texts = ("passage: " + self.df["title"] + "\n" + self.df["content"]).tolist()
         emb = _get_emb_model().encode(

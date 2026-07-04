@@ -41,16 +41,17 @@ uv pip install --python .venv/bin/python -r requirements.txt
 mkdir -p .streamlit
 echo 'ANTHROPIC_API_KEY = "sk-ant-..."' > .streamlit/secrets.toml
 
-# 3. 検索インデックスと文書埋め込みの事前構築 (推奨,CPUで計40〜60分)
-.venv/bin/python rag_core.py
-
-# 4. 起動
+# 3. 起動
 .venv/bin/streamlit run app.py
 ```
 
-- 検索用のコーパス (parquet) はリポジトリに含まれるため,データセットの再構築は不要
-- 手順3を省略しても動くが,その場合は初回起動時に BM25 / TF-IDF インデックス構築(約90秒),初回のベクトル検索時に文書埋め込み構築(CPUでEN側は数十分)が走る。構築結果は `data/*.index.pkl` / `data/*.e5.npy` にキャッシュされ,2回目以降は数秒で起動する
-- キーワード検索系の手法だけならAPIキー以外の待ち時間はほぼない。ベクトル検索の初回はHuggingFaceから埋め込みモデル (約120MB) のダウンロードも走る
+- 検索用のコーパス (parquet) と文書埋め込み (`data/*.e5.npy`) はリポジトリに
+  含まれるため,データセットの再構築や埋め込みの事前計算は不要
+- 初回起動時のみ BM25 / TF-IDF インデックスを構築する(約90秒。`data/*.index.pkl` に
+  キャッシュされ,2回目以降は数秒で起動)。ベクトル検索の初回は HuggingFace から
+  埋め込みモデル (約120MB) のダウンロードが走る
+- parquet を作り直した場合は対応する `data/*.e5.npy` を削除すること
+  (`python rag_core.py` で再構築できる)
 
 ## デモアプリで選べるRAG手法
 
@@ -111,7 +112,7 @@ BM25 単体を超えられていない。ベクトル検索は単体では BM25 
 | BM25 | `rank_bm25.BM25Okapi` のデフォルト(k1=1.5, b=0.75, ε=0.25) |
 | TF-IDF | `char_wb` の3〜4文字n-gram, `max_features=100,000`, `sublinear_tf=True`, float32。類似度はコサイン |
 | ベクトル検索 | `intfloat/multilingual-e5-small`(384次元)。クエリに `query: `,文書に `passage: ` プレフィックスを付与し,正規化埋め込みの内積(=コサイン類似度)。入力は512トークンで切り詰め |
-| インデックスキャッシュ | `data/*.index.pkl`(BM25/TF-IDF)と `data/*.e5.npy`(文書埋め込み)。parquet より新しければ再利用,古ければ再構築 |
+| インデックスキャッシュ | `data/*.index.pkl`(BM25/TF-IDF, parquetより新しければ再利用)と `data/*.e5.npy`(文書埋め込み, リポジトリ同梱。文書数が一致すれば再利用) |
 
 ### 検索・統合のハイパーパラメータ
 
